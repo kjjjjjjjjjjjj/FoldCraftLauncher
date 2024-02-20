@@ -1,6 +1,24 @@
+/*
+ * Hello Minecraft! Launcher
+ * Copyright (C) 2020  huangyuhui <huanghongxun2008@126.com> and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.tungsten.fclcore.util.io;
 
 import java.io.*;
+import java.util.zip.GZIPInputStream;
 
 /**
  * This utility class consists of some util methods operating on InputStream/OutputStream.
@@ -23,6 +41,12 @@ public final class IOUtils {
         ByteArrayOutputStream result = new ByteArrayOutputStream(Math.max(stream.available(), 32));
         copyTo(stream, result);
         return result.toByteArray();
+    }
+
+    public static String readFullyAsStringWithClosing(InputStream stream) throws IOException {
+        ByteArrayOutputStream result = new ByteArrayOutputStream(Math.max(stream.available(), 32));
+        copyTo(stream, result);
+        return result.toString("UTF-8");
     }
 
     /**
@@ -59,5 +83,9 @@ public final class IOUtils {
                 break;
             dest.write(buf, 0, len);
         }
+    }
+
+    public static InputStream wrapFromGZip(InputStream inputStream) throws IOException {
+        return new GZIPInputStream(inputStream);
     }
 }

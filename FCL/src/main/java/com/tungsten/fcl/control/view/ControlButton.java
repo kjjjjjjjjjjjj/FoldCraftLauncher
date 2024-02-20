@@ -99,6 +99,9 @@ public class ControlButton extends AppCompatButton implements CustomView {
     public ControlButton(@NonNull Context context, GameMenu gameMenu, ViewListener listener) {
         super(context);
         this.menu = gameMenu;
+        setElevation(113.0f);
+
+        setStateListAnimator(null);
 
         boundaryPath = new Path();
         boundaryPaint = new Paint();
@@ -303,7 +306,7 @@ public class ControlButton extends AppCompatButton implements CustomView {
                     float targetY = Math.max(0, Math.min(screenHeight - getHeight(), getY() + deltaY));
                     setX(targetX);
                     setY(targetY);
-                    if ((Math.abs(event.getX() - downX) > 1 || Math.abs(event.getY() - downY) > 1) && System.currentTimeMillis() - downTime < 400) {
+                    if ((Math.abs(event.getX() - downX) > 2 || Math.abs(event.getY() - downY) > 2) && System.currentTimeMillis() - downTime < 400) {
                         handler.removeCallbacks(deleteRunnable);
                     }
                     break;
@@ -356,7 +359,7 @@ public class ControlButton extends AppCompatButton implements CustomView {
                     break;
                 case MotionEvent.ACTION_MOVE:
                     handleMoveEvent(event);
-                    if ((Math.abs(event.getX() - downX) > 1 || Math.abs(event.getY() - downY) > 1) && System.currentTimeMillis() - downTime < 400) {
+                    if ((Math.abs(event.getX() - downX) > 2 || Math.abs(event.getY() - downY) > 2) && System.currentTimeMillis() - downTime < 400) {
                         handler.removeCallbacks(runnable);
                     }
                     break;
@@ -476,8 +479,14 @@ public class ControlButton extends AppCompatButton implements CustomView {
         }
     }
 
+    private boolean keycodeOutputting = false;
+
     private void handleKeyEvent(ButtonEventData.Event event, boolean press) {
+        if (!press && !keycodeOutputting) {
+            return;
+        }
         for (int keycode : event.outputKeycodesList()) {
+            keycodeOutputting = press;
             menu.getInput().sendKeyEvent(keycode, press);
         }
     }

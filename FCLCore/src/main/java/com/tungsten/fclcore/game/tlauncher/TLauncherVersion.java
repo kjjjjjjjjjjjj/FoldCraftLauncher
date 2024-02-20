@@ -1,3 +1,20 @@
+/*
+ * Hello Minecraft! Launcher
+ * Copyright (C) 2020  huangyuhui <huanghongxun2008@126.com> and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.tungsten.fclcore.game.tlauncher;
 
 import com.google.gson.JsonParseException;
@@ -16,7 +33,7 @@ import com.tungsten.fclcore.util.gson.Validation;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,12 +55,12 @@ public class TLauncherVersion implements Validation {
     private final JsonMap<DownloadType, DownloadInfo> downloads;
     private final JsonMap<DownloadType, LoggingInfo> logging;
     private final ReleaseType type;
-    private final Date time;
-    private final Date releaseTime;
+    private final Instant time;
+    private final Instant releaseTime;
     private final Integer minimumLauncherVersion;
     private final Integer tlauncherVersion;
 
-    public TLauncherVersion(String id, String minecraftArguments, Arguments arguments, String mainClass, String inheritsFrom, String jar, AssetIndexInfo assetIndex, String assets, Integer complianceLevel, @Nullable GameJavaVersion javaVersion, List<TLauncherLibrary> libraries, List<CompatibilityRule> compatibilityRules, JsonMap<DownloadType, DownloadInfo> downloads, JsonMap<DownloadType, LoggingInfo> logging, ReleaseType type, Date time, Date releaseTime, Integer minimumLauncherVersion, Integer tlauncherVersion) {
+    public TLauncherVersion(String id, String minecraftArguments, Arguments arguments, String mainClass, String inheritsFrom, String jar, AssetIndexInfo assetIndex, String assets, Integer complianceLevel, @Nullable GameJavaVersion javaVersion, List<TLauncherLibrary> libraries, List<CompatibilityRule> compatibilityRules, JsonMap<DownloadType, DownloadInfo> downloads, JsonMap<DownloadType, LoggingInfo> logging, ReleaseType type, Instant time, Instant releaseTime, Integer minimumLauncherVersion, Integer tlauncherVersion) {
         this.id = id;
         this.minecraftArguments = minecraftArguments;
         this.arguments = arguments;

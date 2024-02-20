@@ -144,6 +144,7 @@ public class ModListPage extends FCLCommonPage implements ManageUI.VersionLoadab
             add();
         }
         if (v == checkUpdateButton) {
+            checkUpdateButton.setFocusable(false);
             checkUpdates();
         }
         if (v == refreshButton) {
@@ -339,7 +340,8 @@ public class ModListPage extends FCLCommonPage implements ManageUI.VersionLoadab
                         return null;
                     })
                     .whenComplete(Schedulers.androidUIThread(), (result, exception) -> {
-                        if (exception != null) {
+                        checkUpdateButton.setFocusable(true);
+                        if (exception != null || result == null) {
                             FCLAlertDialog.Builder builder = new FCLAlertDialog.Builder(getContext());
                             builder.setCancelable(false);
                             builder.setAlertLevel(FCLAlertDialog.AlertLevel.ALERT);

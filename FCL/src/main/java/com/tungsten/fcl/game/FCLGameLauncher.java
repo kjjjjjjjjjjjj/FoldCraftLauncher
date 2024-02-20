@@ -1,3 +1,20 @@
+/*
+ * Hello Minecraft! Launcher
+ * Copyright (C) 2020  huangyuhui <huanghongxun2008@126.com> and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.tungsten.fcl.game;
 
 import android.content.Context;
@@ -14,6 +31,7 @@ import com.tungsten.fclcore.game.Version;
 import com.tungsten.fclcore.launch.DefaultLauncher;
 import com.tungsten.fclcore.util.Logging;
 import com.tungsten.fclcore.util.io.FileUtils;
+import com.tungsten.fclcore.util.versioning.VersionNumber;
 import com.tungsten.fcllibrary.util.LocaleUtils;
 
 import java.io.BufferedReader;
@@ -21,7 +39,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -71,11 +88,20 @@ public final class FCLGameLauncher extends DefaultLauncher {
 
     private void modifyOptions(File optionsFile, boolean overwrite) {
         StringBuilder str = new StringBuilder();
+        String lang;
+        VersionNumber gameVersion = VersionNumber.asVersion(repository.getGameVersion(version).orElse("0.0"));
+        if (gameVersion.compareTo("1.1") < 0) {
+            lang = null;
+        } else if (gameVersion.compareTo("1.11") < 0) {
+            lang = "zh_CN";
+        } else {
+            lang = "zh_cn";
+        }
         try (BufferedReader bfr = new BufferedReader(new FileReader(optionsFile))) {
             String line;
             while ((line = bfr.readLine()) != null) {
-                if (line.contains("lang:") && LocaleUtils.isChinese(context) && overwrite) {
-                    str.append("lang:zh_CN\n");
+                if (line.contains("lang:") && LocaleUtils.isChinese(context) && overwrite && lang != null) {
+                    str.append("lang:").append(lang).append("\n");
                 } else if (line.contains("forceUnicodeFont:")) {
                     str.append("forceUnicodeFont:false\n");
                 } else {

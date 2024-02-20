@@ -13,18 +13,6 @@ import static org.lwjgl.system.APIUtil.*;
 /** The platforms supported by LWJGL. */
 public enum Platform {
 
-    FCL("FCL", "fcl") {
-        private final Pattern SO = Pattern.compile("(?:^|/)lib\\w+[.]so(?:[.]\\d+)*$");
-
-        @Override
-        String mapLibraryName(String name) {
-            if (SO.matcher(name).find()) {
-                return name;
-            }
-
-            return System.mapLibraryName(name);
-        }
-    },
     LINUX("Linux", "linux") {
         private final Pattern SO = Pattern.compile("(?:^|/)lib\\w+[.]so(?:[.]\\d+)*$");
 
@@ -96,12 +84,7 @@ public enum Platform {
         if (osName.startsWith("Windows")) {
             current = WINDOWS;
         } else if (osName.startsWith("Linux") || osName.startsWith("FreeBSD") || osName.startsWith("SunOS") || osName.startsWith("Unix")) {
-            String platformName = System.getProperty("lwjgl.platform");
-            if (platformName != null && platformName.startsWith("FCL")) {
-                current = FCL;
-            } else {
-                current = LINUX;
-            }
+            current = LINUX;
         } else if (osName.startsWith("Mac OS X") || osName.startsWith("Darwin")) {
             current = MACOSX;
         } else {

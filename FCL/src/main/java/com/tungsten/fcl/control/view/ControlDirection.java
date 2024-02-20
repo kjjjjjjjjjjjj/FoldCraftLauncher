@@ -111,6 +111,10 @@ public class ControlDirection extends RelativeLayout implements CustomView {
         this.displayMode = displayMode;
         setClickable(true);
 
+        for (AppCompatButton b : buttons) {
+            b.setStateListAnimator(null);
+        }
+
         boundaryPath = new Path();
         boundaryPaint = new Paint();
         boundaryPaint.setAntiAlias(true);
@@ -169,6 +173,7 @@ public class ControlDirection extends RelativeLayout implements CustomView {
         this.menu = null;
         this.displayMode = true;
         setClickable(true);
+        setElevation(112.0f);
 
         boundaryPath = new Path();
         boundaryPaint = new Paint();
@@ -453,7 +458,7 @@ public class ControlDirection extends RelativeLayout implements CustomView {
                     float targetY = Math.max(0, Math.min(screenHeight - getSize(), getY() + deltaY));
                     setX(targetX);
                     setY(targetY);
-                    if ((Math.abs(event.getX() - downX) > 1 || Math.abs(event.getY() - downY) > 1) && System.currentTimeMillis() - downTime < 400) {
+                    if ((Math.abs(event.getX() - downX) > 2 || Math.abs(event.getY() - downY) > 2) && System.currentTimeMillis() - downTime < 400) {
                         handler.removeCallbacks(deleteRunnable);
                     }
                     break;

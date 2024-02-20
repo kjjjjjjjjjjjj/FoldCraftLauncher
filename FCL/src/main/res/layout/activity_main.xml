@@ -64,6 +64,13 @@
                 android:src="@drawable/ic_baseline_settings_24"
                 android:id="@+id/setting"/>
 
+            <com.tungsten.fcllibrary.component.view.FCLMenuView
+                android:layout_marginTop="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_baseline_arrow_back_24"
+                android:id="@+id/back"/>
+
         </androidx.appcompat.widget.LinearLayoutCompat>
 
     </ScrollView>
@@ -131,7 +138,7 @@
             <LinearLayout
                 android:layout_marginStart="10dp"
                 android:layout_width="0dp"
-                android:layout_height="35dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_gravity="center"
                 android:orientation="vertical">
@@ -199,7 +206,7 @@
             <LinearLayout
                 android:layout_marginStart="10dp"
                 android:layout_width="0dp"
-                android:layout_height="35dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_gravity="center"
                 android:orientation="vertical">
@@ -233,9 +240,18 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:layout_weight="1"/>
+
+        <com.tungsten.fcllibrary.component.view.FCLButton
+            android:id="@+id/execute_jar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/jar_execute"
+            android:layout_marginTop="10dp"
+            app:ripple="true"/>
         
         <com.tungsten.fcllibrary.component.view.FCLButton
             android:id="@+id/launch"
+            android:layout_marginTop="10dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/launch"

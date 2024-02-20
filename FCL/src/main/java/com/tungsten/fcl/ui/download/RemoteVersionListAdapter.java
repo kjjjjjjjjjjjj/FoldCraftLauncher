@@ -1,5 +1,7 @@
 package com.tungsten.fcl.ui.download;
 
+import static com.tungsten.fcllibrary.util.LocaleUtils.formatDateTime;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -15,6 +17,7 @@ import com.tungsten.fclcore.download.fabric.FabricRemoteVersion;
 import com.tungsten.fclcore.download.forge.ForgeRemoteVersion;
 import com.tungsten.fclcore.download.game.GameRemoteVersion;
 import com.tungsten.fclcore.download.liteloader.LiteLoaderRemoteVersion;
+import com.tungsten.fclcore.download.neoforge.NeoForgeRemoteVersion;
 import com.tungsten.fclcore.download.optifine.OptiFineRemoteVersion;
 import com.tungsten.fclcore.download.quilt.QuiltAPIRemoteVersion;
 import com.tungsten.fclcore.download.quilt.QuiltRemoteVersion;
@@ -24,8 +27,6 @@ import com.tungsten.fcllibrary.component.view.FCLImageView;
 import com.tungsten.fcllibrary.component.view.FCLLinearLayout;
 import com.tungsten.fcllibrary.component.view.FCLTextView;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 public class RemoteVersionListAdapter extends FCLAdapter {
@@ -82,7 +83,7 @@ public class RemoteVersionListAdapter extends FCLAdapter {
         viewHolder.tag.setBackgroundTintList(new ColorStateList(new int[][] { { } }, new int[]{ ThemeEngine.getInstance().getTheme().getColor() }));
         viewHolder.tag.setText(getTag(remoteVersion));
         viewHolder.date.setVisibility(remoteVersion.getReleaseDate() == null ? View.GONE : View.VISIBLE);
-        viewHolder.date.setText(remoteVersion.getReleaseDate() == null ? "" : DateTimeFormatter.ofPattern(getContext().getString(R.string.world_time)).withZone(ZoneId.systemDefault()).format(remoteVersion.getReleaseDate().toInstant()));
+        viewHolder.date.setText(remoteVersion.getReleaseDate() == null ? "" : formatDateTime(getContext(), remoteVersion.getReleaseDate()));
         return view;
     }
 
@@ -91,9 +92,11 @@ public class RemoteVersionListAdapter extends FCLAdapter {
         if (remoteVersion instanceof LiteLoaderRemoteVersion)
             return getContext().getDrawable(R.drawable.img_chicken);
         else if (remoteVersion instanceof OptiFineRemoteVersion)
-            return getContext().getDrawable(R.drawable.img_command);
+            return getContext().getDrawable(R.drawable.img_optifine);
         else if (remoteVersion instanceof ForgeRemoteVersion)
             return getContext().getDrawable(R.drawable.img_forge);
+        else if (remoteVersion instanceof NeoForgeRemoteVersion)
+            return getContext().getDrawable(R.drawable.img_neoforge);
         else if (remoteVersion instanceof FabricRemoteVersion || remoteVersion instanceof FabricAPIRemoteVersion)
             return getContext().getDrawable(R.drawable.img_fabric);
         else if (remoteVersion instanceof QuiltRemoteVersion || remoteVersion instanceof QuiltAPIRemoteVersion)

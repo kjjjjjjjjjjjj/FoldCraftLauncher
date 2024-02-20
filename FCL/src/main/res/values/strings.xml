@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name" translatable="false">Fold Craft Launcher</string>
-    <string name="app_version" translatable="false">1.1.0</string>
+    <string name="app_version" translatable="false">1.1.4.3</string>
+
+    <string name="oauth_api_key" translatable="false">null</string>
 
     <string name="splash_permission_msg">No storage permission, please grant Fold Craft Launcher the permission.</string>
 
@@ -10,9 +12,12 @@
     <string name="splash_runtime_title">Install or update app runtime</string>
     <string name="splash_runtime_lwjgl" translatable="false">LWJGL</string>
     <string name="splash_runtime_cacio" translatable="false">Caciocavallo</string>
+    <string name="splash_runtime_cacio11" translatable="false">Caciocavallo 11</string>
     <string name="splash_runtime_cacio17" translatable="false">Caciocavallo 17</string>
     <string name="splash_runtime_java8" translatable="false">JRE 8</string>
+    <string name="splash_runtime_java11" translatable="false">JRE 11</string>
     <string name="splash_runtime_java17" translatable="false">JRE 17</string>
+    <string name="splash_runtime_java21" translatable="false">JRE 21</string>
     <string name="splash_runtime_install">Install / Update</string>
 
     <string name="account">Account</string>
@@ -94,6 +99,9 @@
     <string name="action_retry">Retry</string>
     <string name="action_skip">Skip</string>
 
+    <string name="announcement">Announcement: %s</string>
+    <string name="announcement_significant">This announcement is an important announcement. Please confirm that you have read this announcement before hiding it. Do you want to continue hiding it?</string>
+
     <string name="archive_author">Author(s)</string>
     <string name="archive_date">Publish Date</string>
     <string name="archive_game_version">Game Version</string>
@@ -104,16 +112,28 @@
     <string name="assets_download_all">Validating assets integrity</string>
     <string name="assets_index_malformed">Index files of downloaded assets were corrupted.</string>
 
+    <string name="button_back">Back</string>
     <string name="button_cancel">Cancel</string>
+    <string name="button_copy">Copy</string>
+    <string name="button_download">Download</string>
     <string name="button_export">Export</string>
+    <string name="button_hide">Hide</string>
     <string name="button_install">Install</string>
+    <string name="button_mouse_left">Mouse Left</string>
+    <string name="button_mouse_right">Mouse Right</string>
     <string name="button_next">Next</string>
+    <string name="button_paste">Paste</string>
     <string name="button_prev">Prev</string>
     <string name="button_remove">Remove</string>
     <string name="button_remove_confirm">Are you sure you want to permanently remove it? This action cannot be undone!</string>
+    <string name="button_save_as">Save As</string>
     <string name="button_select_all">Select All</string>
     <string name="button_set">Set</string>
     <string name="button_reset">Reset</string>
+    <string name="button_up" translatable="false">▲</string>
+    <string name="button_down" translatable="false">▼</string>
+    <string name="button_left" translatable="false">◀</string>
+    <string name="button_right" translatable="false">▶</string>
 
     <string name="community">Community</string>
     <string name="community_hint">Join our community to get latest version, report bugs, etc. Please follow the community rules if you join.</string>
@@ -146,7 +166,7 @@
     <string name="curse_category_4478">Quests</string>
     <string name="curse_category_4484">Multiplayer</string>
     <string name="curse_category_4476">Exploration</string>
-    <string name="curse_category_6145">Skyblock</string>
+    <string name="curse_category_4736">Skyblock</string>
     <string name="curse_category_4475">Adventure and RPG</string>
     <string name="curse_category_4487">FTB</string>
     <string name="curse_category_4480">Map Based</string>
@@ -160,6 +180,11 @@
     <string name="curse_category_5232">Galacticraft</string>
     <string name="curse_category_5129">Vanilla+</string>
     <string name="curse_category_5189">Utility &#38; QOL</string>
+    <string name="curse_category_6814">Performance</string>
+    <string name="curse_category_6954">Integrated Dynamics</string>
+    <string name="curse_category_6484">Create</string>
+    <string name="curse_category_6821">Bug Fixes</string>
+    <string name="curse_category_6145">Skyblock</string>
     <string name="curse_category_5190">QoL</string>
     <string name="curse_category_5191">Utility &#38; QoL</string>
     <string name="curse_category_5192">FancyMenu</string>
@@ -255,6 +280,7 @@
     <string name="download_code_404">File not found on the remote server: %s</string>
     <string name="download_failed">Failed to download %1$s, response code: %2$d</string>
     <string name="download_failed_empty">No versions are available</string>
+    <string name="download_failed_refresh">Unable to fetch version list. Please retry.</string>
 
     <string name="download_provider_mcbbs">MCBBS (https://www.mcbbs.net/)</string>
     <string name="download_provider_bmclapi">BMCLAPI (bangbang93, https://bmclapi2.bangbang93.com/)</string>
@@ -343,7 +369,7 @@
     <string name="game_crash_reason_optifine_is_not_compatible_with_forge">The current game crashes because OptiFine is incompatible with the current version of Forge.</string>
     <string name="game_crash_reason_mod_files_are_decompressed">The current game cannot continue to run because the Mod file has been decompressed.\nPlease put the entire Mod file directly into the Mod folder!\nIf unzipping will cause errors in the game, please delete the unzipped Mod in the Mod folder, and then start the game.</string>
     <string name="game_crash_reason_cannot_find_launch_target_fmlclient">The current game cannot be found because Forge is not installed completely.\nYou can try to uninstall Forge and reinstall it.</string>
-    <string name="game_crash_reason_shaders_mod">The current game cannot continue to run because both Optifine and Shaders Mod are installed.\nBecause Optifine has integrated Shaders Mod\'s functions, just remove Shaders Mod.</string>
+    <string name="game_crash_reason_shaders_mod">The current game cannot continue to run because both OptiFine and Shaders Mod are installed.\nBecause OptiFine has integrated Shaders Mod\'s functions, just remove Shaders Mod.</string>
     <string name="game_crash_reason_too_many_mods_lead_to_exceeding_the_id_limit">The current game cannot continue to run because you have installed too many Mods, which exceeds the ID limit of the game.\nPlease try installing JEID, or delete some large Mods.</string>
     <string name="game_crash_reason_night_config_fixes">The current game cannot continue to run due to some problems with Night Config.\nYou can try to install the Night Config Fixes mod, which may help you this problem.\nFor more information, visit the mod\'s Github repository.</string>
     <string name="game_crash_reason_optifine_causes_the_world_to_fail_to_load">The current game may not continue to run because of OptiFine.\nThis problem only occurs in a specific version of OptiFine. You can try changing the version of OptiFine.</string>
@@ -351,7 +377,7 @@
     <string name="game_crash_reason_loading_crashed_forge">The game crashed due to mod %1$s (%2$s).\n\nYou can try deleting or updating it.</string>
     <string name="game_crash_reason_loading_crashed_fabric">The game crashed due to mod %1$s.\n\nYou can try deleting or updating it.</string>
     <string name="game_crash_reason_forge_repeat_installation">The current game cannot continue to run due to a duplicate installation of Forge. This is a known issue.\nIt is recommended to upload the log feedback to Github so that we can find more clues and fix this question.\nCurrently you can uninstall Forge and reinstall it.</string>
-    <string name="game_crash_reason_optifine_repeat_installation">The current game cannot continue to run due to repeated installation of Optifine. \nPlease delete Optifine under the Mod folder or uninstall Optifine that is automatically installed.</string>
+    <string name="game_crash_reason_optifine_repeat_installation">The current game cannot continue to run due to repeated installation of OptiFine. \nPlease delete OptiFine under the Mod folder or uninstall OptiFine that is automatically installed.</string>
     <string name="game_crash_reason_memory_exceeded">The game crashed due to too much memory allocated.</string>
     <string name="game_crash_reason_mod">The game crashed due to mod %1$s.\n\nYou may update or delete the mod and then try again.</string>
     <string name="game_crash_reason_mod_resolution">The game crashed due to mod resolution failure.\n\nFabric provided the following details:\n%1$s</string>
@@ -402,6 +428,7 @@
     <string name="install_installer_fabric_api" translatable="false">Fabric API</string>
     <string name="install_installer_fabric_api_warning">Warning: Fabric API is a mod, and will be installed into the mod directory of the game instance. Please do not change the working directory of the game, or the Fabric API will not work. If you do want to change these settings, you should reinstall it.</string>
     <string name="install_installer_forge" translatable="false">Forge</string>
+    <string name="install_installer_neoforge" translatable="false">NeoForge</string>
     <string name="install_installer_game" translatable="false">Minecraft</string>
     <string name="install_installer_incompatible">Incompatible with %s</string>
     <string name="install_installer_install">Install %s</string>
@@ -418,8 +445,13 @@
     <string name="install_new_game_malformed">Invalid Name</string>
     <string name="install_success">Installed successfully.</string>
 
+    <string name="jar_execute">Execute Jar</string>
+    <string name="jar_execute_custom_args">Execute with custom args</string>
+    <string name="jar_executor_crash_title">Jar Executor Crashed</string>
+    <string name="jar_executor_crash_reason">Jar Executor crash reason analyse is not supported now.</string>
+
     <string name="launch">Launch</string>
-    <string name="launch_error_java">Wrong Java Version</string>
+    <string name="launch_error_java">You are using a deprecated Java version, are you sure you want to continue?</string>
     <string name="launch_error_java_auto">Auto select</string>
     <string name="launch_error_java_continue">Continue</string>
     <string name="launch_failed">Unable to launch</string>
@@ -491,6 +523,8 @@
     <string name="menu_settings_multiplayer_button">Open</string>
     <string name="menu_settings_quick_input">Quick Input</string>
     <string name="menu_settings_quick_input_button">Manage</string>
+    <string name="menu_settings_send_key">Send Key</string>
+    <string name="menu_settings_send_key_button">Send</string>
     <string name="menu_settings_show_log">Show Log</string>
 
     <string name="message_cancelled">Operation was cancelled</string>
@@ -596,6 +630,7 @@
     <string name="modrinth_category_mobs">Mobs</string>
     <string name="modrinth_category_modloader">Modloader</string>
     <string name="modrinth_category_multiplayer">Multiplayer</string>
+    <string name="modrinth_category_neoforge">NeoForge</string>
     <string name="modrinth_category_optimization">Optimization</string>
     <string name="modrinth_category_paper">Paper</string>
     <string name="modrinth_category_purpur">Purpur</string>
@@ -632,10 +667,18 @@
     <string name="mods_check_updates_update">Update</string>
     <string name="mods_choose_mod">Choose a mod</string>
     <string name="mods_curseforge">CurseForge</string>
-    <string name="mods_dependencies">Dependencies</string>
+    <string name="mods_dependency">Dependency</string>
+    <string name="mods_dependency_embedded">built-in pre-mod (already packaged in the mod file by the author, no need to download separately)</string>
+    <string name="mods_dependency_optional">optional pre-mod (if the game is missing, but mod functionality may be missing)</string>
+    <string name="mods_dependency_required">required pre-mod (must be downloaded separately, missing may cause the game to fail to launch)</string>
+    <string name="mods_dependency_tool">precursor library (must be downloaded separately, missing may cause the game to fail to launch)</string>
+    <string name="mods_dependency_include">built-in pre-mod (already packaged in the mod file by the author, no need to download separately)</string>
+    <string name="mods_dependency_incompatible">incompatible mod (installing both the mod and the mod being downloaded will cause the game to fail to launch)</string>
+    <string name="mods_dependency_broken">Broken pre-mod (This premod used to exist on the mod repository, but is now deleted.) Try a different download source.</string>
     <string name="mods_disable">Disable</string>
     <string name="mods_download">Mod Download</string>
     <string name="mods_download_title">Mod Download - %1s</string>
+    <string name="mods_download_recommend">Recommended Mod Version - Minecraft %1s</string>
     <string name="mods_enable">Enable</string>
     <string name="mods_manage">Manage Mods</string>
     <string name="mods_mcbbs">MCBBS</string>
@@ -668,6 +711,11 @@
     <string name="search_hint_chinese">Search queries support both Chinese and English</string>
     <string name="search_hint_english">Only English is supported</string>
     <string name="search_sort">Sort By</string>
+    <string name="search_first_page">First</string>
+    <string name="search_previous_page" translatable="false">◀</string>
+    <string name="search_next_page" translatable="false">▶</string>
+    <string name="search_last_page">Last</string>
+    <string name="search_page_n" translatable="false">%d / %s</string>
 
     <string name="settings_advanced_dont_check_game_completeness">Do not check game integrity</string>
     <string name="settings_advanced_dont_check_jvm_validity">Do not check JVM compatibility</string>

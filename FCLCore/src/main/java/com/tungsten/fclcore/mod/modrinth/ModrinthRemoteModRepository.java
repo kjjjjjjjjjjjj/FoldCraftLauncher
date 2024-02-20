@@ -1,3 +1,20 @@
+/*
+ * Hello Minecraft! Launcher
+ * Copyright (C) 2021  huangyuhui <huanghongxun2008@126.com> and contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.tungsten.fclcore.mod.modrinth;
 
 import static com.tungsten.fclcore.util.Lang.mapOf;
@@ -11,6 +28,7 @@ import com.tungsten.fclcore.mod.RemoteMod;
 import com.tungsten.fclcore.mod.RemoteModRepository;
 import com.tungsten.fclcore.util.DigestUtils;
 import com.tungsten.fclcore.util.Lang;
+import com.tungsten.fclcore.util.Pair;
 import com.tungsten.fclcore.util.StringUtils;
 import com.tungsten.fclcore.util.gson.JsonUtils;
 import com.tungsten.fclcore.util.io.HttpRequest;
@@ -21,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,7 +80,7 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
     }
 
     @Override
-    public Stream<RemoteMod> search(String gameVersion, @Nullable RemoteModRepository.Category category, int pageOffset, int pageSize, String searchFilter, SortType sort, SortOrder sortOrder) throws IOException {
+    public SearchResult search(String gameVersion, @Nullable RemoteModRepository.Category category, int pageOffset, int pageSize, String searchFilter, SortType sort, SortOrder sortOrder) throws IOException {
         List<List<String>> facets = new ArrayList<>();
         facets.add(Collections.singletonList("project_type:" + projectType));
         if (StringUtils.isNotBlank(gameVersion)) {
@@ -73,14 +92,14 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
         Map<String, String> query = mapOf(
                 pair("query", searchFilter),
                 pair("facets", JsonUtils.UGLY_GSON.toJson(facets)),
-                pair("offset", Integer.toString(pageOffset)),
+                pair("offset", Integer.toString(pageOffset * pageSize)),
                 pair("limit", Integer.toString(pageSize)),
                 pair("index", convertSortType(sort))
         );
         Response<ProjectSearchResult> response = HttpRequest.GET(NetworkUtils.withQuery(PREFIX + "/v2/search", query))
                 .getJson(new TypeToken<Response<ProjectSearchResult>>() {
                 }.getType());
-        return response.getHits().stream().map(ProjectSearchResult::toMod);
+        return new SearchResult(response.getHits().stream().map(ProjectSearchResult::toMod), (int)Math.ceil((double)response.totalHits / pageSize));
     }
 
     @Override
@@ -196,13 +215,13 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
 
         private final String team;
 
-        private final Date published;
+        private final Instant published;
 
-        private final Date updated;
+        private final Instant updated;
 
         private final List<String> versions;
 
-        public Project(String slug, String title, String description, List<String> categories, String body, String projectType, int downloads, String iconUrl, String id, String team, Date published, Date updated, List<String> versions) {
+        public Project(String slug, String title, String description, List<String> categories, String body, String projectType, int downloads, String iconUrl, String id, String team, Instant published, Instant updated, List<String> versions) {
             this.slug = slug;
             this.title = title;
             this.description = description;
@@ -258,11 +277,11 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
             return team;
         }
 
-        public Date getPublished() {
+        public Instant getPublished() {
             return published;
         }
 
-        public Date getUpdated() {
+        public Instant getUpdated() {
             return updated;
         }
 
@@ -272,17 +291,12 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
 
         @Override
         public List<RemoteMod> loadDependencies(RemoteModRepository modRepository) throws IOException {
-            Set<String> dependencies = modRepository.getRemoteVersionsById(getId())
+            Set<RemoteMod.Dependency> dependencies = modRepository.getRemoteVersionsById(getId())
                     .flatMap(version -> version.getDependencies().stream())
                     .collect(Collectors.toSet());
             List<RemoteMod> mods = new ArrayList<>();
-            for (String dependencyId : dependencies) {
-                if (dependencyId == null) {
-                    mods.add(RemoteMod.getEmptyRemoteMod());
-                }
-                if (StringUtils.isNotBlank(dependencyId)) {
-                    mods.add(modRepository.getModById(dependencyId));
-                }
+            for (RemoteMod.Dependency dependency : dependencies) {
+                mods.add(dependency.load());
             }
             return mods;
         }
@@ -299,9 +313,9 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
                     title,
                     description,
                     categories,
-                    null,
+                    String.format("https://modrinth.com/%s/%s", projectType, id),
                     iconUrl,
-                    (RemoteMod.IMod) this
+                    this
             );
         }
     }
@@ -336,6 +350,13 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
     }
 
     public static class ProjectVersion implements RemoteMod.IVersion {
+        private static final Map<String, RemoteMod.DependencyType> DEPENDENCY_TYPE = Lang.mapOf(
+                Pair.pair("required", RemoteMod.DependencyType.REQUIRED),
+                Pair.pair("optional", RemoteMod.DependencyType.OPTIONAL),
+                Pair.pair("embedded", RemoteMod.DependencyType.EMBEDDED),
+                Pair.pair("incompatible", RemoteMod.DependencyType.INCOMPATIBLE)
+        );
+
         private final String name;
 
         @SerializedName("version_number")
@@ -364,7 +385,7 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
         private final String authorId;
 
         @SerializedName("date_published")
-        private final Date datePublished;
+        private final Instant datePublished;
 
         private final int downloads;
 
@@ -373,7 +394,7 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
 
         private final List<ProjectVersionFile> files;
 
-        public ProjectVersion(String name, String versionNumber, String changelog, List<Dependency> dependencies, List<String> gameVersions, String versionType, List<String> loaders, boolean featured, String id, String projectId, String authorId, Date datePublished, int downloads, String changelogUrl, List<ProjectVersionFile> files) {
+        public ProjectVersion(String name, String versionNumber, String changelog, List<Dependency> dependencies, List<String> gameVersions, String versionType, List<String> loaders, boolean featured, String id, String projectId, String authorId, Instant datePublished, int downloads, String changelogUrl, List<ProjectVersionFile> files) {
             this.name = name;
             this.versionNumber = versionNumber;
             this.changelog = changelog;
@@ -435,7 +456,7 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
             return authorId;
         }
 
-        public Date getDatePublished() {
+        public Instant getDatePublished() {
             return datePublished;
         }
 
@@ -481,12 +502,24 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
                     datePublished,
                     type,
                     files.get(0).toFile(),
-                    dependencies.stream().map(dependency -> dependency.getVersionId() == null ? null : dependency.getProjectId()).collect(Collectors.toList()),
+                    dependencies.stream().map(dependency -> {
+                        if (dependency.projectId == null) {
+                            return RemoteMod.Dependency.ofBroken();
+                        }
+
+                        if (!DEPENDENCY_TYPE.containsKey(dependency.dependencyType)) {
+                            throw new IllegalStateException("Broken datas");
+                        }
+
+                        return RemoteMod.Dependency.ofGeneral(DEPENDENCY_TYPE.get(dependency.dependencyType), MODS, dependency.projectId);
+                    }).filter(Objects::nonNull).collect(Collectors.toList()),
                     gameVersions,
                     loaders.stream().flatMap(loader -> {
                         if ("fabric".equalsIgnoreCase(loader)) return Stream.of(ModLoaderType.FABRIC);
                         else if ("forge".equalsIgnoreCase(loader)) return Stream.of(ModLoaderType.FORGE);
+                        else if ("neoforge".equalsIgnoreCase(loader)) return Stream.of(ModLoaderType.NEO_FORGED);
                         else if ("quilt".equalsIgnoreCase(loader)) return Stream.of(ModLoaderType.QUILT);
+                        else if ("liteloader".equalsIgnoreCase(loader)) return Stream.of(ModLoaderType.LITE_LOADER);
                         else return Stream.empty();
                     }).collect(Collectors.toList())
             ));
@@ -558,15 +591,15 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
         private final List<String> versions;
 
         @SerializedName("date_created")
-        private final Date dateCreated;
+        private final Instant dateCreated;
 
         @SerializedName("date_modified")
-        private final Date dateModified;
+        private final Instant dateModified;
 
         @SerializedName("latest_version")
         private final String latestVersion;
 
-        public ProjectSearchResult(String slug, String title, String description, List<String> categories, String projectType, int downloads, String iconUrl, String projectId, String author, List<String> versions, Date dateCreated, Date dateModified, String latestVersion) {
+        public ProjectSearchResult(String slug, String title, String description, List<String> categories, String projectType, int downloads, String iconUrl, String projectId, String author, List<String> versions, Instant dateCreated, Instant dateModified, String latestVersion) {
             this.slug = slug;
             this.title = title;
             this.description = description;
@@ -622,11 +655,11 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
             return versions;
         }
 
-        public Date getDateCreated() {
+        public Instant getDateCreated() {
             return dateCreated;
         }
 
-        public Date getDateModified() {
+        public Instant getDateModified() {
             return dateModified;
         }
 
@@ -636,17 +669,12 @@ public final class ModrinthRemoteModRepository implements RemoteModRepository {
 
         @Override
         public List<RemoteMod> loadDependencies(RemoteModRepository modRepository) throws IOException {
-            Set<String> dependencies = modRepository.getRemoteVersionsById(getProjectId())
+            Set<RemoteMod.Dependency> dependencies = modRepository.getRemoteVersionsById(getProjectId())
                     .flatMap(version -> version.getDependencies().stream())
                     .collect(Collectors.toSet());
             List<RemoteMod> mods = new ArrayList<>();
-            for (String dependencyId : dependencies) {
-                if (dependencyId == null) {
-                    mods.add(RemoteMod.getEmptyRemoteMod());
-                }
-                if (StringUtils.isNotBlank(dependencyId)) {
-                    mods.add(modRepository.getModById(dependencyId));
-                }
+            for (RemoteMod.Dependency dependency : dependencies) {
+                mods.add(dependency.load());
             }
             return mods;
         }

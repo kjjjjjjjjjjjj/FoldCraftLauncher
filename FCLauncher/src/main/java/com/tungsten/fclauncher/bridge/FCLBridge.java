@@ -5,6 +5,9 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
@@ -14,12 +17,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 
+import com.tungsten.fclauncher.keycodes.FCLKeycodes;
 import com.tungsten.fclauncher.utils.FCLPath;
 
 import java.io.File;
 import java.io.Serializable;
 
 public class FCLBridge implements Serializable {
+
+    public static final int DEFAULT_WIDTH = 1280;
+    public static final int DEFAULT_HEIGHT = 720;
 
     public static final int HIT_RESULT_TYPE_UNKNOWN          = 0;
     public static final int HIT_RESULT_TYPE_MISS             = 1;
@@ -34,6 +41,7 @@ public class FCLBridge implements Serializable {
     public static final int ButtonPress                      = 4;
     public static final int ButtonRelease                    = 5;
     public static final int MotionNotify                     = 6;
+    public static final int KeyChar                          = 7;
     public static final int ConfigureNotify                  = 22;
     public static final int FCLMessage                       = 37;
 
@@ -68,9 +76,9 @@ public class FCLBridge implements Serializable {
     private String renderer;
     private String java;
     private Surface surface;
+    private boolean surfaceDestroyed;
     private Handler handler;
     private Thread thread;
-    private Thread fclLogThread;
 
     static {
         System.loadLibrary("xhook");
@@ -80,6 +88,10 @@ public class FCLBridge implements Serializable {
 
     public FCLBridge() {
     }
+
+    public native int[] renderAWTScreenFrame();
+    public native void nativeSendData(int type, int i1, int i2, int i3, int i4);
+    public native void nativeMoveWindow(int x, int y);
 
     public native void setFCLNativeWindow(Surface surface);
     public native int redirectStdio(String path);
@@ -112,15 +124,24 @@ public class FCLBridge implements Serializable {
         this.handler = new Handler();
         this.callback = callback;
         this.surface = surface;
-        fclLogThread = new Thread(() -> {
-            receiveLog("invoke redirectStdio");
-            int errorCode = redirectStdio(getLogPath());
-            if (errorCode != 0) {
-                receiveLog("Can't exec redirectStdio! Error code: " + errorCode);
-            }
-        });
-        fclLogThread.setName("FCLLogThread");
-        fclLogThread.start();
+        setFCLBridge(this);
+        receiveLog("invoke redirectStdio" + "\n");
+        int errorCode = redirectStdio(getLogPath());
+        if (errorCode != 0) {
+            receiveLog("Can't exec redirectStdio! Error code: " + errorCode + "\n");
+        }
+        receiveLog("invoke setLogPipeReady" + "\n");
+        // set graphic output and event pipe
+        if (surface != null) {
+            handleWindow();
+        }
+        receiveLog("invoke setEventPipe" + "\n");
+        setEventPipe();
+
+        // start
+        if (thread != null) {
+            thread.start();
+        }
     }
 
     public void pushEventMouseButton(int button, boolean press) {
@@ -135,6 +156,10 @@ public class FCLBridge implements Serializable {
         pushEvent(System.nanoTime(), press ? KeyPress : KeyRelease, keyCode, keyChar);
     }
 
+    public void pushEventChar(int keyChar) {
+        pushEvent(System.nanoTime(), KeyChar, FCLKeycodes.KEY_RESERVED, keyChar);
+    }
+
     public void pushEventWindow(int width, int height) {
         pushEvent(System.nanoTime(), ConfigureNotify, width, height);
     }
@@ -146,7 +171,7 @@ public class FCLBridge implements Serializable {
     // FCLBridge callbacks
     public void onExit(int code) {
         if (callback != null) {
-            callback.onLog("OpenJDK exited with code : " + code);
+            callback.onLog("OpenJDK exited with code : " + code + "\n");
             callback.onExit(code);
         }
     }
@@ -245,6 +270,14 @@ public class FCLBridge implements Serializable {
         return java;
     }
 
+    public void setSurfaceDestroyed(boolean surfaceDestroyed) {
+        this.surfaceDestroyed = surfaceDestroyed;
+    }
+
+    public boolean isSurfaceDestroyed() {
+        return surfaceDestroyed;
+    }
+
     @NonNull
     public String getLogPath() {
         return logPath;
@@ -254,29 +287,42 @@ public class FCLBridge implements Serializable {
         this.logPath = logPath;
     }
 
-    public void setLogPipeReady() {
-        receiveLog("invoke setLogPipeReady");
-        handler.post(() -> {
-            receiveLog("invoke setFCLBridge");
-            setFCLBridge(this);
-            // set graphic output and event pipe
-            if (surface != null) {
-                receiveLog("invoke setFCLNativeWindow");
-                setFCLNativeWindow(surface);
-            }
-            receiveLog("invoke setEventPipe");
-            setEventPipe();
-
-            // start
-            if (thread != null) {
-                thread.start();
-            }
-        });
-    }
-
     public void receiveLog(String log) {
         if (callback != null) {
             callback.onLog(log);
+        }
+    }
+
+    private void handleWindow() {
+        if (gameDir != null) {
+            receiveLog("invoke setFCLNativeWindow" + "\n");
+            setFCLNativeWindow(surface);
+        } else {
+            receiveLog("start Android AWT Renderer thread" + "\n");
+            Thread canvasThread = new Thread(() -> {
+                Canvas canvas;
+                Bitmap rgbArrayBitmap = Bitmap.createBitmap(DEFAULT_WIDTH, DEFAULT_HEIGHT, Bitmap.Config.ARGB_8888);
+                Paint paint = new Paint();
+                try {
+                    while (!surfaceDestroyed && surface.isValid()) {
+                        canvas = surface.lockCanvas(null);
+                        canvas.drawRGB(0, 0, 0);
+                        int[] rgbArray = renderAWTScreenFrame();
+                        if (rgbArray != null) {
+                            canvas.save();
+                            rgbArrayBitmap.setPixels(rgbArray, 0, DEFAULT_WIDTH, 0, 0, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+                            canvas.drawBitmap(rgbArrayBitmap, 0, 0, paint);
+                            canvas.restore();
+                        }
+                        surface.unlockCanvasAndPost(canvas);
+                    }
+                } catch (Throwable throwable) {
+                    handler.post(() -> receiveLog(throwable + "\n"));
+                }
+                rgbArrayBitmap.recycle();
+                surface.release();
+            }, "AndroidAWTRenderer");
+            canvasThread.start();
         }
     }
 }
