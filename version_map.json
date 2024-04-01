@@ -1,20 +1,20 @@
 [
   {
     "type": "release",
-    "versionCode": 1143,
-    "versionName": "1.1.4.3",
-    "date": "2024.02.17",
+    "versionCode": 1160,
+    "versionName": "1.1.6",
+    "date": "2024.04.01",
     "description": [
       {
         "lang": "en",
-        "text": "JRE 11 support.\nJRE 21 support.\nFix CurseForge download.\nFix log format.\nFix game crash on x64 device.\nFix some bugs, see github for details."
+        "text": "Fix some bug.\nAdd some features.\nFix some bugs, see github for details."
       },
       {
         "lang": "zh_CN",
-        "text": "支持 JRE 11。\n支持 JRE 21。\n修复 CurseForge 下载。\n修复日志格式。\n修复 x64 设备上游戏崩溃的错误。\n修复一些错误，详情见 Github，若无法下载或下载速度过慢，请使用网盘下载。"
+        "text": "FCL 1.1.6更新内容\n1.增加手柄支持（暂时只能兼容部分手柄）\n2.增加Freedreno渲染器（只支持骁龙CPU）\n3.增加游戏内分辨率缩放\n4.允许调整物品栏大小\n5.修复账户凭据过期导致无法启动的bug\n6.在启动器内的文件了浏览器中添加使用外部应用打开的功能（墙裂建议\n安装一个MT管理器）\n7.允许禁用软键盘自适应（游戏内打开输入法自动顶起画面）\n8.调整删除自定义按键的方式（长按删除改为点击后打开的对话框内删除）\n9.修复公告语言错误的bug\n10.允许控件隐藏时侧滑打开菜单\n11.允许自定义按键名称中使用换行\n......"
       }
     ],
     "netdiskUrl": "https://alist.8mi.tech/FCL",
-    "url": "https://github.com/FCL-Team/FoldCraftLauncher/releases/download/1.1.4.3/FCL-release-1.1.4.3-all.apk"
+    "url": "https://github.com/FCL-Team/FoldCraftLauncher/releases/download/1.1.6/FCL-release-1.1.6-all.apk"
   }
 ]
