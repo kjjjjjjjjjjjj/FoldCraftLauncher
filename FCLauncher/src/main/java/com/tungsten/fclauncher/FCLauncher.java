@@ -37,6 +37,7 @@ public class FCLauncher {
         log(bridge, "Device: " + DeviceName.getDeviceName());
         log(bridge, "Architecture: " + Architecture.archAsString(Architecture.getDeviceArchitecture()));
         log(bridge, "CPU:" + Build.HARDWARE);
+        log(bridge, "Android SDK: " + Build.VERSION.SDK_INT);
     }
 
     private static Map<String, String> readJREReleaseProperties(String javaPath) throws IOException {
@@ -137,6 +138,9 @@ public class FCLauncher {
         if (FFmpegPlugin.isAvailable) {
             envMap.put("PATH", FFmpegPlugin.libraryPath + ":" + envMap.get("PATH"));
             envMap.put("LD_LIBRARY_PATH", FFmpegPlugin.libraryPath);
+        }
+        if (config.isUseVKDriverSystem()) {
+            envMap.put("VULKAN_DRIVER_SYSTEM", "1");
         }
     }
 

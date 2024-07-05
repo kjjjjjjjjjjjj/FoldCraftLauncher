@@ -4,6 +4,8 @@ import static com.tungsten.fclcore.util.Logging.LOG;
 import static com.tungsten.fclcore.util.Pair.pair;
 
 import android.annotation.SuppressLint;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -11,6 +13,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ScrollView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
@@ -27,6 +30,7 @@ import com.tungsten.fcllibrary.component.FCLActivity;
 import com.tungsten.fcllibrary.component.view.FCLButton;
 import com.tungsten.fcllibrary.component.view.FCLProgressBar;
 import com.tungsten.fcllibrary.component.view.FCLTextView;
+import com.tungsten.fcllibrary.crash.CrashReporter;
 
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +55,7 @@ public class JVMCrashActivity extends FCLActivity implements View.OnClickListene
 
     private FCLButton restart;
     private FCLButton close;
+    private FCLButton copy;
     private FCLButton share;
 
     private FCLTextView title;
@@ -67,10 +72,12 @@ public class JVMCrashActivity extends FCLActivity implements View.OnClickListene
 
         restart = findViewById(R.id.restart);
         close = findViewById(R.id.close);
+        copy = findViewById(R.id.copy);
         share = findViewById(R.id.share);
 
         restart.setOnClickListener(this);
         close.setOnClickListener(this);
+        copy.setOnClickListener(this);
         share.setOnClickListener(this);
 
         title = findViewById(R.id.title);
@@ -257,20 +264,27 @@ public class JVMCrashActivity extends FCLActivity implements View.OnClickListene
             android.os.Process.killProcess(android.os.Process.myPid());
             System.exit(10);
         }
+        if (v == copy) {
+            ClipboardManager clipboard = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                ClipData clip = ClipData.newPlainText(null, error.getText().toString());
+                clipboard.setPrimaryClip(clip);
+                Toast.makeText(this, com.tungsten.fcllibrary.R.string.crash_reporter_toast, Toast.LENGTH_SHORT).show();
+            }
+        }
         if (v == share) {
             try {
                 Intent intent = new Intent(Intent.ACTION_SEND);
                 File file = File.createTempFile("fcl-latest", ".log");
                 FileUtils.writeText(file, error.getText().toString());
                 Uri uri = FileProvider.getUriForFile(this, getString(com.tungsten.fcllibrary.R.string.file_browser_provider), file);
-                intent.setType("*/*");
+                intent.setType("text/plain");
                 intent.putExtra(Intent.EXTRA_STREAM, uri);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                intent.addCategory(Intent.CATEGORY_DEFAULT);
                 startActivity(Intent.createChooser(intent, getString(com.tungsten.fcllibrary.R.string.crash_reporter_share)));
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                LOG.log(Level.INFO, "Share error: " + e);
             }
         }
     }
