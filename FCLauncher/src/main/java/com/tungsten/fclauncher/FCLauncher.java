@@ -9,9 +9,11 @@ import android.system.Os;
 import android.util.ArrayMap;
 
 import com.jaredrummler.android.device.DeviceName;
+import com.oracle.dalvik.VMLauncher;
 import com.tungsten.fclauncher.bridge.FCLBridge;
 import com.tungsten.fclauncher.plugins.FFmpegPlugin;
 import com.tungsten.fclauncher.utils.Architecture;
+import com.tungsten.fclauncher.utils.FCLPath;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -113,8 +115,30 @@ public class FCLauncher {
                 "/hw" +
                 split +
 
-                nativeDir +
-                (FFmpegPlugin.isAvailable ? split + FFmpegPlugin.libraryPath : "");
+                FCLPath.RUNTIME_DIR + "/jna" +
+                split +
+
+                nativeDir;
+    }
+
+    private static String getLibraryPath(Context context) {
+        String nativeDir = context.getApplicationInfo().nativeLibraryDir;
+        String libDirName = is64BitsDevice() ? "lib64" : "lib";
+        String split = ":";
+        return  "/system/" +
+                libDirName +
+                split +
+
+                "/vendor/" +
+                libDirName +
+                split +
+
+                "/vendor/" +
+                libDirName +
+                "/hw" +
+                split +
+
+                nativeDir;
     }
 
     private static String[] rebaseArgs(FCLConfig config) throws IOException {
@@ -132,12 +156,15 @@ public class FCLauncher {
         envMap.put("HOME", config.getLogDir());
         envMap.put("JAVA_HOME", config.getJavaPath());
         envMap.put("FCL_NATIVEDIR", config.getContext().getApplicationInfo().nativeLibraryDir);
+        envMap.put("POJAV_NATIVEDIR", config.getContext().getApplicationInfo().nativeLibraryDir);
         envMap.put("TMPDIR", config.getContext().getCacheDir().getAbsolutePath());
         envMap.put("PATH", config.getJavaPath() + "/bin:" + Os.getenv("PATH"));
+        envMap.put("LD_LIBRARY_PATH", getLibraryPath(config.getContext()));
+        envMap.put("FORCE_VSYNC","false");
         FFmpegPlugin.discover(config.getContext());
         if (FFmpegPlugin.isAvailable) {
             envMap.put("PATH", FFmpegPlugin.libraryPath + ":" + envMap.get("PATH"));
-            envMap.put("LD_LIBRARY_PATH", FFmpegPlugin.libraryPath);
+            envMap.put("LD_LIBRARY_PATH", FFmpegPlugin.libraryPath + ":" + envMap.get("LD_LIBRARY_PATH"));
         }
         if (config.isUseVKDriverSystem()) {
             envMap.put("VULKAN_DRIVER_SYSTEM", "1");
@@ -146,9 +173,6 @@ public class FCLauncher {
 
     private static void addRendererEnv(FCLConfig config, HashMap<String, String> envMap) {
         FCLConfig.Renderer renderer = config.getRenderer() == null ? FCLConfig.Renderer.RENDERER_GL4ES : config.getRenderer();
-        envMap.put("LIBGL_STRING", renderer.toString());
-        envMap.put("LIBGL_NAME", renderer.getGlLibName());
-        envMap.put("LIBEGL_NAME", renderer.getEglLibName());
         if (renderer == FCLConfig.Renderer.RENDERER_GL4ES || renderer == FCLConfig.Renderer.RENDERER_VGPU) {
             envMap.put("LIBGL_ES", "2");
             envMap.put("LIBGL_MIPMAP", "3");
@@ -156,8 +180,15 @@ public class FCLauncher {
             envMap.put("LIBGL_VSYNC", "1");
             envMap.put("LIBGL_NOINTOVLHACK", "1");
             envMap.put("LIBGL_NOERROR", "1");
+            if (renderer == FCLConfig.Renderer.RENDERER_GL4ES) {
+                envMap.put("POJAV_RENDERER","opengles2");
+            } else {
+                envMap.put("POJAV_RENDERER","opengles2_vgpu");
+            }
         } else if (renderer == FCLConfig.Renderer.RENDERER_ANGLE) {
+            envMap.put("POJAV_RENDERER","opengles3_desktopgl_angle_vulkan");
             envMap.put("LIBGL_ES","3");
+            envMap.put("POJAVEXEC_EGL","libEGL_angle.so");
         } else {
             envMap.put("MESA_GLSL_CACHE_DIR", config.getContext().getCacheDir().getAbsolutePath());
             envMap.put("MESA_GL_VERSION_OVERRIDE", renderer == FCLConfig.Renderer.RENDERER_VIRGL ? "4.3" : "4.6");
@@ -168,13 +199,12 @@ public class FCLauncher {
             envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "zink");
             envMap.put("VTEST_SOCKET_NAME", new File(config.getContext().getCacheDir().getAbsolutePath(), ".virgl_test").getAbsolutePath());
             if (renderer == FCLConfig.Renderer.RENDERER_VIRGL) {
-                envMap.put("GALLIUM_DRIVER", "virpipe");
                 envMap.put("OSMESA_NO_FLUSH_FRONTBUFFER", "1");
+                envMap.put("POJAV_RENDERER","gallium_virgl");
             } else if (renderer == FCLConfig.Renderer.RENDERER_ZINK) {
-                envMap.put("GALLIUM_DRIVER", "zink");
+                envMap.put("POJAV_RENDERER","vulkan_zink");
             } else if (renderer == FCLConfig.Renderer.RENDERER_FREEDRENO) {
-                envMap.put("GALLIUM_DRIVER", "freedreno");
-                envMap.put("MESA_LOADER_DRIVER_OVERRIDE", "kgsl");
+                envMap.put("POJAV_RENDERER","gallium_freedreno");
             }
         }
     }
@@ -234,6 +264,7 @@ public class FCLauncher {
         String nativeDir = config.getContext().getApplicationInfo().nativeLibraryDir;
 
         bridge.dlopen(nativeDir + "/libopenal.so");
+        bridge.dlopen(nativeDir + "/" + config.getRenderer().getGlLibName());
     }
 
     private static void launch(FCLConfig config, FCLBridge bridge, String task) throws IOException {
@@ -260,10 +291,10 @@ public class FCLauncher {
                 isToken = true;
             log(bridge, prefix + arg);
         }
-        bridge.setupJLI();
         bridge.setLdLibraryPath(getLibraryPath(config.getContext(), config.getJavaPath()));
-        log(bridge, "Hook exit " + (bridge.setupExitTrap(bridge) == 0 ? "success" : "failed"));
-        int exitCode = bridge.jliLaunch(args);
+        bridge.setupExitTrap(bridge);
+        log(bridge, "Hook success");
+        int exitCode = VMLauncher.launchJVM(args);
         bridge.onExit(exitCode);
     }
 

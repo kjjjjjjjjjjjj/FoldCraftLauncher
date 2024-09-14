@@ -67,6 +67,8 @@ import com.tungsten.fcllibrary.component.dialog.FCLAlertDialog;
 import com.tungsten.fcllibrary.component.dialog.FCLDialog;
 import com.tungsten.fcllibrary.component.view.FCLButton;
 
+import org.lwjgl.glfw.CallbackBridge;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -161,16 +163,23 @@ public final class LauncherHelper {
                 .thenComposeAsync(() -> logIn(context, account).withStage("launch.state.logging_in"))
                 .thenComposeAsync(authInfo -> Task.supplyAsync(() -> {
                     LaunchOptions launchOptions = repository.getLaunchOptions(selectedVersion, javaVersionRef.get(), profile.getGameDir(), javaAgents);
-                    return new FCLGameLauncher(
+                    FCLGameLauncher launcher = new FCLGameLauncher(
                             context,
                             repository,
                             version.get(),
                             authInfo,
                             launchOptions
                     );
+                    version.get().getLibraries().forEach(library -> {
+                        if (library.getName().startsWith("net.java.dev.jna:jna:")) {
+                            launcher.setJnaVersion(library.getVersion());
+                        }
+                    });
+                    return launcher;
                 }).thenComposeAsync(launcher -> { // launcher is prev task's result
                     return Task.supplyAsync(launcher::launch);
                 }).thenAcceptAsync(fclBridge -> Schedulers.androidUIThread().execute(() -> {
+                    CallbackBridge.nativeSetUseInputStackQueue(version.get().getArguments().isPresent());
                     Intent intent = new Intent(context, JVMActivity.class);
                     fclBridge.setScaleFactor(repository.getVersionSetting(selectedVersion).getScaleFactor());
                     fclBridge.setController(repository.getVersionSetting(selectedVersion).getController());
@@ -198,7 +207,7 @@ public final class LauncherHelper {
                 launchingStepsPane.dismiss();
                 if (!success) {
                     Exception ex = executor.getException();
-                    if (!(ex instanceof CancellationException)) {
+                    if (ex != null && !(ex instanceof CancellationException)) {
                         Schedulers.androidUIThread().execute(() -> {
                             String message;
                             if (ex instanceof ModpackCompletionException) {
