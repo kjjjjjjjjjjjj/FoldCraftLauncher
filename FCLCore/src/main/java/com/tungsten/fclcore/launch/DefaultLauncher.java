@@ -147,14 +147,20 @@ public class DefaultLauncher extends Launcher {
         res.addDefault("-Dorg.lwjgl.opengl.libname=", "${gl_lib_name}");
         res.addDefault("-Dorg.lwjgl.freetype.libname=", context.getApplicationInfo().nativeLibraryDir + "/libfreetype.so");
         res.addDefault("-Dfml.earlyprogresswindow=", "false");
-        res.addDefault("-Dglfwstub.windowWidth=", options.getWidth() + "");
-        res.addDefault("-Dglfwstub.windowHeight=", options.getHeight() + "");
+        if (FCLBridge.BACKEND_IS_BOAT) {
+            res.addDefault("-Dwindow.width=", options.getWidth() + "");
+            res.addDefault("-Dwindow.height=", options.getHeight() + "");
+        } else {
+            res.addDefault("-Dglfwstub.windowWidth=", options.getWidth() + "");
+            res.addDefault("-Dglfwstub.windowHeight=", options.getHeight() + "");
+        }
         res.addDefault("-Dglfwstub.initEgl=", "false");
         res.addDefault("-Dloader.disable_forked_guis=", "true");
         res.addDefault("-Duser.home=", options.getGameDir().getAbsolutePath());
         res.addDefault("-Duser.language=", System.getProperty("user.language"));
         res.addDefault("-Duser.timezone=", TimeZone.getDefault().getID());
         res.addDefault("-Dorg.lwjgl.vulkan.libname=", "libvulkan.so");
+        res.addDefault("-Dsodium.checks.issue2561=", "false");
         File libJna = new File(FCLPath.RUNTIME_DIR, "jna");
         if (jnaVersion != null && !jnaVersion.isEmpty()) {
             libJna = new File(libJna, jnaVersion);
@@ -441,6 +447,7 @@ public class DefaultLauncher extends Launcher {
                 finalArgs
         );
         config.setUseVKDriverSystem(options.isVKDriverSystem());
+        config.setPojavBigCore(options.isPojavBigCore());
         return FCLauncher.launchMinecraft(config);
     }
 

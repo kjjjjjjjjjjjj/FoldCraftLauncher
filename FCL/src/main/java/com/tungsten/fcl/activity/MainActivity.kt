@@ -1,30 +1,39 @@
 package com.tungsten.fcl.activity
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
+import android.transition.Slide
+import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.view.View.OnLongClickListener
 import android.view.ViewGroup
 import android.view.animation.BounceInterpolator
+import android.view.animation.OvershootInterpolator
+import android.widget.ArrayAdapter
 import android.widget.FrameLayout
-import android.widget.RelativeLayout
+import android.widget.ListView
+import android.widget.PopupWindow
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.forEach
-import androidx.core.view.marginStart
+import androidx.core.view.postDelayed
 import androidx.databinding.DataBindingUtil
 import com.mio.util.AnimUtil
 import com.mio.util.AnimUtil.Companion.interpolator
 import com.mio.util.AnimUtil.Companion.startAfter
+import com.mio.util.GuideUtil
+import com.mio.util.RendererUtil
 import com.tungsten.fcl.R
 import com.tungsten.fcl.databinding.ActivityMainBinding
 import com.tungsten.fcl.game.JarExecutorHelper
 import com.tungsten.fcl.game.TexturesLoader
 import com.tungsten.fcl.setting.Accounts
 import com.tungsten.fcl.setting.ConfigHolder
+import com.tungsten.fcl.setting.Controllers
 import com.tungsten.fcl.setting.Profile
 import com.tungsten.fcl.setting.Profiles
 import com.tungsten.fcl.ui.UIManager
@@ -33,10 +42,12 @@ import com.tungsten.fcl.upgrade.UpdateChecker
 import com.tungsten.fcl.util.AndroidUtils
 import com.tungsten.fcl.util.FXUtils
 import com.tungsten.fcl.util.WeakListenerHolder
+import com.tungsten.fclauncher.FCLConfig
+import com.tungsten.fclauncher.bridge.FCLBridge
+import com.tungsten.fclauncher.plugins.RendererPlugin
 import com.tungsten.fclcore.auth.Account
 import com.tungsten.fclcore.auth.authlibinjector.AuthlibInjectorAccount
 import com.tungsten.fclcore.auth.authlibinjector.AuthlibInjectorServer
-import com.tungsten.fclcore.auth.offline.Skin
 import com.tungsten.fclcore.auth.yggdrasil.TextureModel
 import com.tungsten.fclcore.download.LibraryAnalyzer
 import com.tungsten.fclcore.download.LibraryAnalyzer.LibraryType
@@ -58,15 +69,20 @@ import com.tungsten.fcllibrary.component.view.FCLMenuView
 import com.tungsten.fcllibrary.component.view.FCLMenuView.OnSelectListener
 import com.tungsten.fcllibrary.util.ConvertUtils
 import java.io.IOException
+import java.lang.ref.WeakReference
 import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.stream.Stream
+import kotlin.system.exitProcess
 
 class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
     companion object {
-        @SuppressLint("StaticFieldLeak")
+        private lateinit var instance: WeakReference<MainActivity>
+
         @JvmStatic
-        lateinit var instance: MainActivity
+        fun getInstance(): MainActivity {
+            return instance.get()!!
+        }
     }
 
     lateinit var bind: ActivityMainBinding
@@ -79,52 +95,10 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        instance = this
+        instance = WeakReference(this)
         bind = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
         bind.background.background = ThemeEngine.getInstance().getTheme().getBackground(this)
-
-        Skin.registerDefaultSkinLoader {
-            when (it) {
-                Skin.Type.ALEX -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/alex.png"
-                )
-
-                Skin.Type.ARI -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/ari.png"
-                )
-
-                Skin.Type.EFE -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/efe.png"
-                )
-
-                Skin.Type.KAI -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/kai.png"
-                )
-
-                Skin.Type.MAKENA -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/makena.png"
-                )
-
-                Skin.Type.NOOR -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/noor.png"
-                )
-
-                Skin.Type.STEVE -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/steve.png"
-                )
-
-                Skin.Type.SUNNY -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/sunny.png"
-                )
-
-                Skin.Type.ZURI -> return@registerDefaultSkinLoader Skin::class.java.getResourceAsStream(
-                    "/assets/img/zuri.png"
-                )
-
-                else -> return@registerDefaultSkinLoader null
-            }
-        }
 
         RemoteMod.registerEmptyRemoteMod(
             RemoteMod(
@@ -192,9 +166,10 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
                     true
                 }
                 launch.setOnClickListener(this@MainActivity)
-                launch.setOnLongClickListener {
-                    startActivity(Intent(this@MainActivity, ShellActivity::class.java))
-                    true
+                launchBoat.setOnClickListener(this@MainActivity)
+                OnLongClickListener { openRendererMenu(it);true }.apply {
+                    launch.setOnLongClickListener(this)
+                    launchBoat.setOnLongClickListener(this)
                 }
 
                 uiManager = UIManager(this@MainActivity, uiLayout)
@@ -205,6 +180,7 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
                         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         i.addCategory(Intent.CATEGORY_HOME)
                         startActivity(i)
+                        exitProcess(0)
                     } else {
                         home.isSelected = true
                     }
@@ -218,12 +194,24 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
                     setting.setOnSelectListener(this@MainActivity)
                     back.setOnClickListener(this@MainActivity)
                     home.setSelected(true)
+                    back.setOnLongClickListener {
+                        startActivity(Intent(this@MainActivity, ShellActivity::class.java))
+                        true
+                    }
 
                     setupAccountDisplay()
                     setupVersionDisplay()
                     UpdateChecker.getInstance().checkAuto(this@MainActivity).start()
                 }
                 playAnim()
+                uiLayout.postDelayed(1500) {
+                    GuideUtil.show(
+                        this@MainActivity,
+                        setting,
+                        getString(R.string.guide_theme2),
+                        GuideUtil.TAG_GUIDE_THEME_2
+                    )
+                }
             }
         }
     }
@@ -248,10 +236,17 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
 
     override fun onSelect(view: FCLMenuView) {
         refreshMenuView(view)
+        val speed = ThemeEngine.getInstance().getTheme().animationSpeed
+        AnimUtil.playRotation(view, speed * 100L, 0f, 360f)
+            .interpolator(OvershootInterpolator()).start()
+        AnimUtil.playScaleX(view, speed * 100L, 1f, 2f, 1f)
+            .start()
+        AnimUtil.playScaleY(view, speed * 100L, 1f, 2f, 1f)
+            .start()
         bind.apply {
             when (view) {
                 home -> {
-                    title.setTextWithAnim(getString(R.string.app_name))
+                    title.setTextWithAnim(getString(R.string.app_name) + " " + getString(R.string.app_version))
                     uiManager.switchUI(uiManager.mainUI)
                 }
 
@@ -318,7 +313,21 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
                 JarExecutorHelper.start(this@MainActivity, this@MainActivity)
             }
             if (view === launch) {
-                Versions.launch(this@MainActivity, Profiles.getSelectedProfile())
+                if (!Controllers.isInitialized()) {
+                    title.setTextWithAnim(getString(R.string.message_loading_controllers))
+                    return
+                }
+                val selectedProfile = Profiles.getSelectedProfile()
+                RendererPlugin.rendererList.forEach {
+                    if (it.des == selectedProfile.getVersionSetting(selectedProfile.selectedVersion).customRenderer) {
+                        RendererPlugin.selected = it
+                    }
+                }
+                Versions.launch(this@MainActivity, selectedProfile)
+            }
+            if (view === launchBoat) {
+                FCLBridge.BACKEND_IS_BOAT = true;
+                onClick(launch)
             }
         }
     }
@@ -380,7 +389,6 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
         }
     }
 
-    @SuppressLint("UseCompatLoadingForDrawables")
     private fun loadVersion(version: String?) {
         bind.versionProgress.visibility = View.VISIBLE
         if (Profiles.getSelectedProfile() != profile) {
@@ -397,9 +405,13 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
             )
         ) {
             Schedulers.defaultScheduler().execute {
-                val game = Profiles.getSelectedProfile().repository.getGameVersion(version)
-                    .orElse(getString(R.string.message_unknown))
-                val libraries = StringBuilder(game)
+                var game: String? = null
+                kotlin.runCatching {
+                    game = Profiles.getSelectedProfile().repository.getGameVersion(version)
+                        .orElse(getString(R.string.message_unknown))
+                }
+                if (game == null) return@execute
+                val libraries = StringBuilder(game!!)
                 val analyzer = LibraryAnalyzer.analyze(
                     Profiles.getSelectedProfile().repository.getResolvedPreservingPatchesVersion(
                         version
@@ -439,7 +451,12 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
             bind.versionProgress.visibility = View.GONE
             bind.versionName.text = getString(R.string.version_no_version)
             bind.versionHint.text = getString(R.string.version_manage)
-            bind.icon.setBackgroundDrawable(getDrawable(R.drawable.img_grass))
+            bind.icon.setBackgroundDrawable(
+                AppCompatResources.getDrawable(
+                    this,
+                    R.drawable.img_grass
+                )
+            )
         }
     }
 
@@ -462,6 +479,14 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
         }
     }
 
+    private fun openRendererMenu(view: View) {
+        RendererUtil.openRendererMenu(
+            this, view, bind.rightMenu.width, bind.launch.y.toInt()
+        ) {
+            onClick(view)
+        }
+    }
+
     private fun playAnim() {
         bind.apply {
             val speed = ThemeEngine.getInstance().getTheme().animationSpeed
@@ -481,14 +506,26 @@ class MainActivity : FCLActivity(), OnSelectListener, View.OnClickListener {
             ).forEach {
                 it.interpolator(BounceInterpolator()).start()
             }
-            AnimUtil.playTranslationY(listOf(launch, executeJar), speed * 100L, -200f, 0f)
-                .forEachIndexed { index, objectAnimator ->
-                    objectAnimator.interpolator(BounceInterpolator()).startAfter((index + 1) * 100L)
-                }
+            AnimUtil.playTranslationY(
+                listOf(executeJar, launch, launchBoat),
+                speed * 100L,
+                -200f,
+                0f
+            ).forEachIndexed { index, objectAnimator ->
+                objectAnimator.interpolator(BounceInterpolator()).startAfter((index + 1) * 100L)
+            }
             AnimUtil.playTranslationY(
                 listOf(home, manage, download, controller, setting, back),
                 speed * 100L,
                 -300f,
+                0f
+            ).forEachIndexed { index, objectAnimator ->
+                objectAnimator.interpolator(BounceInterpolator()).startAfter((index + 1) * 100L)
+            }
+            AnimUtil.playTranslationX(
+                listOf(home, manage, download, controller, setting, back),
+                speed * 100L,
+                -100f,
                 0f
             ).forEachIndexed { index, objectAnimator ->
                 objectAnimator.interpolator(BounceInterpolator()).startAfter((index + 1) * 100L)

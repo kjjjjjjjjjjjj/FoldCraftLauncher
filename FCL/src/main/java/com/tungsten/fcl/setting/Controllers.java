@@ -4,7 +4,7 @@ import static com.tungsten.fcl.util.FXUtils.onInvalidating;
 import static com.tungsten.fclcore.fakefx.collections.FXCollections.observableArrayList;
 
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
 import com.tungsten.fclauncher.utils.FCLPath;
 import com.tungsten.fclcore.fakefx.beans.Observable;
 import com.tungsten.fclcore.fakefx.beans.property.ReadOnlyListProperty;
@@ -74,17 +74,13 @@ public class Controllers {
         if (files != null) {
             ArrayList<String> fileNames = (ArrayList<String>) controllers.stream().map(Controller::getFileName).collect(Collectors.toList());
             for (File file : files) {
-                if (((file.isDirectory() && !file.getName().equals("styles")) || !fileNames.contains(file.getName())) && !file.getName().endsWith(".bak")) {
+                if (((file.isDirectory() && !file.getName().equals("styles") && !file.getName().equals("input")) || !fileNames.contains(file.getName())) && !file.getName().endsWith(".bak")) {
                     file.delete();
                 }
             }
         }
         for (Controller controller : controllers) {
-            try {
-                controller.saveToDisk();
-            } catch (IOException e) {
-                Logging.LOG.log(Level.SEVERE, "Failed to save controller!", e);
-            }
+            controller.saveToDisk();
         }
     }
 
@@ -122,7 +118,7 @@ public class Controllers {
                     list.add(controller);
                 } catch (IOException e) {
                     Logging.LOG.log(Level.WARNING, "Can't read file: " + json.getAbsolutePath(), e.getMessage());
-                } catch (JsonSyntaxException e) {
+                } catch (JsonParseException e) {
                     Logging.LOG.log(Level.WARNING, "File: " + json.getAbsolutePath(), e.getMessage() + " is broken!");
                     json.renameTo(new File(FCLPath.CONTROLLER_DIR, json.getName() + ".bak"));
                 }

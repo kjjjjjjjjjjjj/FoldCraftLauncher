@@ -19,6 +19,7 @@ import com.tungsten.fcl.R;
 import com.tungsten.fcl.activity.ControllerActivity;
 import com.tungsten.fcl.setting.Controller;
 import com.tungsten.fcl.setting.Controllers;
+import com.tungsten.fcl.ui.PageManager;
 import com.tungsten.fcl.ui.UIManager;
 import com.tungsten.fcl.util.AndroidUtils;
 import com.tungsten.fcl.util.RequestCodes;
@@ -28,6 +29,7 @@ import com.tungsten.fclcore.fakefx.beans.property.BooleanProperty;
 import com.tungsten.fclcore.fakefx.beans.property.ObjectProperty;
 import com.tungsten.fclcore.fakefx.beans.property.SimpleBooleanProperty;
 import com.tungsten.fclcore.fakefx.beans.property.SimpleObjectProperty;
+import com.tungsten.fclcore.task.Schedulers;
 import com.tungsten.fclcore.task.Task;
 import com.tungsten.fclcore.util.Logging;
 import com.tungsten.fclcore.util.io.FileUtils;
@@ -37,6 +39,7 @@ import com.tungsten.fcllibrary.browser.options.SelectionMode;
 import com.tungsten.fcllibrary.component.ui.FCLCommonPage;
 import com.tungsten.fcllibrary.component.view.FCLButton;
 import com.tungsten.fcllibrary.component.view.FCLLinearLayout;
+import com.tungsten.fcllibrary.component.view.FCLProgressBar;
 import com.tungsten.fcllibrary.component.view.FCLTextView;
 import com.tungsten.fcllibrary.component.view.FCLUILayout;
 
@@ -138,25 +141,32 @@ public class ControllerManagePage extends FCLCommonPage implements View.OnClickL
         editController.setOnClickListener(this);
 
         refreshList();
+
+        FCLProgressBar progress = findViewById(R.id.progress);
+        progress.setVisibility(View.GONE);
     }
 
-    public void refreshList() {
+    private void refreshList() {
         EditableControllerListAdapter adapter = new EditableControllerListAdapter(getContext(), Controllers.controllersProperty());
         listView.setAdapter(adapter);
     }
 
     public void addController(Controller controller) {
-        Controllers.addController(controller);
-        refreshList();
-        selectedController.set(controller);
+        Schedulers.androidUIThread().execute(() -> {
+            Controllers.addController(controller);
+            refreshList();
+            selectedController.set(controller);
+        });
     }
 
     public void removeController(Controller controller) {
-        Controllers.removeControllers(controller);
-        refreshList();
-        if (controller == selectedController.get()) {
-            selectedController.set(null);
-        }
+        Schedulers.androidUIThread().execute(() -> {
+            Controllers.removeControllers(controller);
+            refreshList();
+            if (controller == selectedController.get()) {
+                selectedController.set(null);
+            }
+        });
     }
 
     public void changeControllerInfo(Controller old, Controller newValue) {
@@ -175,11 +185,7 @@ public class ControllerManagePage extends FCLCommonPage implements View.OnClickL
         }
 
         refreshProperty.set(!refreshProperty.get());
-        try {
-            old.saveToDisk();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        old.saveToDisk();
     }
 
     @Override
@@ -226,7 +232,8 @@ public class ControllerManagePage extends FCLCommonPage implements View.OnClickL
             UIManager.getInstance().getControllerUI().getPageManager().switchPage(ControllerPageManager.PAGE_ID_CONTROLLER_REPO);
         }
         if (view == upload) {
-
+            ControllerUploadPage page = new ControllerUploadPage(getContext(), PageManager.PAGE_ID_TEMP, getParent(), R.layout.page_controller_upload, selectedController.get());
+            ControllerPageManager.getInstance().showTempPage(page);
         }
         if (view == share) {
             Intent intent = new Intent(Intent.ACTION_SEND);

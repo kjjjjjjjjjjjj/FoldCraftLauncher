@@ -42,6 +42,8 @@
 EGLConfig config;
 struct PotatoBridge potatoBridge;
 
+void bigcore_set_affinity();
+
 #include "ctxbridges/egl_loader.h"
 #include "ctxbridges/osmesa_loader.h"
 #include "pojav/virgl/virgl.h"
@@ -50,6 +52,8 @@ struct PotatoBridge potatoBridge;
 #define RENDERER_GL4ES 1
 #define RENDERER_VK_ZINK 2
 #define RENDERER_VULKAN 4
+
+static int fps = 0;
 
 EXTERNAL_API void pojavTerminate() {
     printf("EGLBridge: Terminating\n");
@@ -249,6 +253,7 @@ EXTERNAL_API void pojavSetWindowHint(int hint, int value) {
 }
 
 EXTERNAL_API void pojavSwapBuffers() {
+    fps++;
     if (pojav_environ->config_renderer == RENDERER_VIRGL)
         virglSwapBuffers();
     else br_swap_buffers();
@@ -256,6 +261,7 @@ EXTERNAL_API void pojavSwapBuffers() {
 
 
 EXTERNAL_API void pojavMakeCurrent(void* window) {
+    if (getenv("POJAV_BIG_CORE_AFFINITY") != NULL) bigcore_set_affinity();
     if (pojav_environ->config_renderer == RENDERER_VIRGL)
         virglMakeCurrent(window);
     else br_make_current((basic_render_window_t*)window);
@@ -293,4 +299,11 @@ EXTERNAL_API void pojavSetInjectorCallback(FCLinjectorfun callback) {
 
 EXTERNAL_API void pojavSetHitResultType(int type) {
     fclSetHitResultType(type);
+}
+
+JNIEXPORT jint JNICALL
+Java_org_lwjgl_glfw_CallbackBridge_getFps(JNIEnv *env, jclass clazz) {
+    int f = fps;
+    fps = 0;
+    return f;
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ArrayAdapter;
 
@@ -69,6 +70,10 @@ public class EditViewDialog extends FCLDialog implements View.OnClickListener {
         this.customControl = cloneView;
         this.callback = callback;
         setCancelable(false);
+        Window dialogWindow = getWindow();
+        if (dialogWindow != null) {
+            dialogWindow.setLayout(ConvertUtils.dip2px(context,500), ViewGroup.LayoutParams.MATCH_PARENT);
+        }
         setContentView(R.layout.dialog_edit_view);
 
         title = findViewById(R.id.title);
@@ -231,8 +236,8 @@ public class EditViewDialog extends FCLDialog implements View.OnClickListener {
                 FCLTextView widthText = findInfoView(R.id.width_text);
                 FCLTextView heightText = findInfoView(R.id.height_text);
 
-                widthText.setOnClickListener(v -> openTextEditDialog(context, width.progressProperty(), false));
-                heightText.setOnClickListener(v -> openTextEditDialog(context, height.progressProperty(), false));
+                widthText.setOnClickListener(v -> openTextEditDialog(context, width.progressProperty(), data.getBaseInfo().getSizeType() == BaseInfoData.SizeType.PERCENTAGE));
+                heightText.setOnClickListener(v -> openTextEditDialog(context, height.progressProperty(), data.getBaseInfo().getSizeType() == BaseInfoData.SizeType.PERCENTAGE));
 
                 if (data.getBaseInfo().getSizeType() == BaseInfoData.SizeType.PERCENTAGE) {
                     width.setMax(1000);

@@ -1,18 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_MODULE            := angle_gles2
-LOCAL_SRC_FILES         := tinywrapper/angle-gles/$(TARGET_ARCH_ABI)/libGLESv2_angle.so
-include $(PREBUILT_SHARED_LIBRARY)
-
-include $(CLEAR_VARS)
-LOCAL_MODULE            := tinywrapper
-LOCAL_SHARED_LIBRARIES  := angle_gles2
-LOCAL_SRC_FILES         := tinywrapper/main.c tinywrapper/string_utils.c
-LOCAL_C_INCLUDES        := $(LOCAL_PATH)/tinywrapper
-include $(BUILD_SHARED_LIBRARY)
-
-include $(CLEAR_VARS)
 LOCAL_MODULE            := fcl
 LOCAL_SHARED_LIBRARIES  := bytehook
 LOCAL_SRC_FILES         := fcl/fcl_bridge.c \
@@ -22,6 +10,35 @@ LOCAL_SRC_FILES         := fcl/fcl_bridge.c \
                            fcl/utils.c
 LOCAL_C_INCLUDES        := $(LOCAL_PATH)/fcl/include
 LOCAL_LDLIBS            := -llog -ldl -landroid
+include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_MODULE            := glfw
+LOCAL_SHARED_LIBRARIES  := fcl
+LOCAL_SRC_FILES         := glfw/context.c \
+                           glfw/init.c \
+                           glfw/input.c \
+                           glfw/monitor.c \
+                           glfw/vulkan.c \
+                           glfw/window.c \
+                           glfw/fcl_init.c \
+                           glfw/fcl_monitor.c \
+                           glfw/fcl_window.c \
+                           glfw/egl_context.c \
+                           glfw/osmesa_context.c \
+                           glfw/platform.c \
+                           glfw/posix_thread.c \
+                           glfw/posix_time.c \
+                           glfw/driver_helper.c \
+                           driver_helper/nsbypass.c
+LOCAL_C_INCLUDES        := $(LOCAL_PATH)/fcl/include \
+                           $(LOCAL_PATH)/glfw/include
+LOCAL_CFLAGS            := -Wall
+LOCAL_LDLIBS            := -llog -ldl -landroid
+ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
+LOCAL_CFLAGS            += -DADRENO_POSSIBLE
+LOCAL_LDLIBS            += -lEGL -lGLESv2
+endif
 include $(BUILD_SHARED_LIBRARY)
 
 #ifeq ($(TARGET_ARCH_ABI), arm64-v8a)
